@@ -52,48 +52,65 @@ export const generateMarketingAsset = async (
 
   let layoutInstructions = "";
   
-  // RAPSODO BRAND SYSTEM LOGIC
+  // RAPSODO BRAND SYSTEM LOGIC - STRICT ENFORCEMENT
   if (isRapsodo) {
       layoutInstructions = `
-      **RAPSODO DESIGN SYSTEM (STRICT COMPLIANCE)**
-      You are not just making a dark page. You are building a Rapsodo Brand Asset.
+      **RAPSODO DESIGN SYSTEM: THE "BLACK BOX" STANDARD**
+      You are building a PRO-LEVEL sports tech interface. Adhere strictly to these rules.
       
-      1. **Typography (Non-Negotiable):**
-         - **HEADLINES:** Must use 'font-condensed' (Bebas Neue). MUST be 'uppercase'. MUST include 'tracking-widest'.
-         - **SIZE:** Headlines should be HUGE (text-6xl or text-7xl for Hero, text-4xl for section headers).
-         - **BODY:** Clean sans-serif ('font-sans'), readable text-gray-300.
+      **1. GLOBAL THEME (NON-NEGOTIABLE)**
+      - **Background:** 'bg-black' (Hex #000000). NO gray backgrounds for the main page.
+      - **Text:** 'text-[#F5F5F5]' (Off-White) for body. 'text-white' for headers.
+      - **Accent:** 'text-[#C8102E]' (Rapsodo Red) for emphasis and active states.
+      - **Borders:** 'border-zinc-800' (Subtle, technical).
 
-      2. **Color Palette (Official Hexes):**
-         - **Backgrounds:** PURE BLACK (#000000) or OFF-BLACK (#0f0f0f). Do not use blue-tinted grays.
-         - **Accents:** Rapsodo Red (#C8102E). Use this for buttons, borders, and horizontal rule lines.
-         - **Text:** White (#FFFFFF) for headers. Light Gray (#D4D4D4) for body. NEVER use black text on these backgrounds.
+      **2. TYPOGRAPHY**
+      - **HEADLINES:** Font 'font-condensed' (Bebas Neue). UPPERCASE. Tracking 'tracking-widest'.
+      - **BODY:** Font 'font-sans' (Inter). High legibility.
+      - **NUMBERS:** Huge, bold, athletic.
 
-      3. **Visual Language (Aggressive & Technical):**
-         - **Borders:** Use thin, sharp borders (border-neutral-800).
-         - **Corners:** Use 'rounded-sm' or 'rounded-none'. Avoid soft 'rounded-xl' or 'rounded-2xl'. This is sports tech, not a lifestyle blog.
-         - **Separators:** Use a red accent line (w-24 h-1 bg-[#C8102E]) under every main section headline.
+      **3. MANDATORY LAYOUT STRUCTURE (STEP-BY-STEP)**
+      You must use the following HTML structure for every "Step" or "Section":
 
-      4. **Layout Structure (Editorial/Instructional):**
-         - **Hero Section:** Full height, immersive. Text bottom-left or centered.
-         - **Steps:** Alternating full-width sections. 
-            - Odd Steps: bg-black.
-            - Even Steps: bg-[#111111].
-         - **Images:** "Cinema Mode". Full width container, image centered within it. Add a subtle 'border border-neutral-800' around images.
+      <div class="group relative py-24 border-b border-zinc-900/50">
+         <div class="max-w-5xl mx-auto px-6 flex flex-col gap-12">
+            
+            <!-- A. TEXT BLOCK (ALWAYS FIRST) -->
+            <div class="flex flex-col items-center text-center max-w-3xl mx-auto">
+               <span class="font-condensed text-[#C8102E] text-8xl leading-none opacity-50 select-none">01</span>
+               <h2 class="font-condensed text-5xl text-white uppercase tracking-widest mt-4 mb-6">STEP TITLE</h2>
+               <p class="font-sans text-xl text-zinc-400 leading-relaxed">Instructional copy goes here.</p>
+            </div>
 
-      5. **Footer / Support (Crucial):**
-         - Background: #000000.
-         - Grid: 4 Columns (Email Support, Call Us, Resources, Socials).
-         - Text: White headers, Gray links.
-         - **NO BLACK TEXT IN FOOTER.**
+            <!-- B. IMAGE BLOCK (ALWAYS SECOND) -->
+            <div class="w-full relative">
+               <!-- Tech Borders / HUD Elements -->
+               <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#C8102E]"></div>
+               <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#C8102E]"></div>
+               <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#C8102E]"></div>
+               <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#C8102E]"></div>
+               
+               <!-- Image Container -->
+               <div class="relative bg-zinc-900/50 rounded-sm border border-zinc-800 overflow-hidden shadow-2xl">
+                   <img src="..." class="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500" />
+               </div>
+            </div>
+
+         </div>
+      </div>
+
+      **4. FOOTER (HIGH VISIBILITY)**
+      - **Background:** 'bg-black' (Must match body).
+      - **Border:** Top border 'border-t border-zinc-800'.
+      - **Text:** Headers 'text-white'. Links 'text-zinc-500 hover:text-[#C8102E]'.
+      - **Note:** Do NOT use dark text on dark background. Ensure contrast is high.
       `;
   } else if (branding.contentType === 'landing_page') {
     // GENERIC LANDING PAGE LOGIC
     layoutInstructions = `
     **STRICT LAYOUT RULE: DARK MODE EDITORIAL FLOW**
-    - **Global Theme:** DARK MODE ONLY. Backgrounds must be #000000 or #18181b (zinc-900). Text must be White.
-    - **Structure:** Full-Width Alternating Sections.
-      - Step 1: Pure Black Background (bg-black).
-      - Step 2: Dark Zinc Background (bg-zinc-900/50).
+    - **Global Theme:** ABSOLUTE DARK MODE. Backgrounds must be #000000.
+    - **Structure:** Full-Width Sections.
     - **Typography:** Headlines text-white. Body text-zinc-400.
     - **Spacing:** 'py-24' or 'py-32' for sections.
     - **Footer:** Background Black. Text Light Gray.
@@ -104,7 +121,7 @@ export const generateMarketingAsset = async (
   if (imageStrategy === 'none') {
     imageInstructions = "DO NOT include any <img> tags or images in the layout. Text only.";
   } else if (imageStrategy === 'placeholder') {
-    imageInstructions = "Use placeholder images: 'https://placehold.co/800x600/333/FFF?text=Visual'.";
+    imageInstructions = "Use placeholder images: 'https://placehold.co/800x600/111/FFF?text=Visual'.";
   } else if (imageStrategy === 'upload') {
     imageInstructions = `
       **INTELLIGENT VISUAL MAPPING (MULTIMODAL ANALYSIS):**
@@ -118,7 +135,7 @@ export const generateMarketingAsset = async (
       
       **TOKENS & RULES:**
       - Use token: {{UPLOADED_IMAGE_X}} (where X is the index provided below).
-      - **Image Styling:** <img src="{{UPLOADED_IMAGE_X}}" class="droppable-image w-full max-w-5xl mx-auto shadow-2xl border border-neutral-800" />
+      - **Image Styling:** <img src="{{UPLOADED_IMAGE_X}}" class="droppable-image w-full h-auto" />
       
       **CRITICAL - MISSING IMAGES:**
       - If a step (e.g. Step 6) has NO matching image in the assets:

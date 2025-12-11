@@ -153,12 +153,12 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data, isLoading, upl
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
             html { scroll-behavior: smooth; }
-            body { background-color: transparent; }
+            body { background-color: #000000; color: #ffffff; }
             /* Force min-height on common containers to ensure drop targets exist */
-            .droppable-image { min-height: 100px; display: block; background-color: #f3f4f6; }
+            .droppable-image { min-height: 100px; display: block; background-color: #111; }
           </style>
         </head>
-        <body>
+        <body class="bg-black text-white">
           ${content}
           ${dragDropScript}
         </body>
@@ -209,21 +209,21 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data, isLoading, upl
         {viewMode === 'preview' && (
           <div className="flex flex-col h-full">
             <div className="flex-1 w-full p-4 md:p-8 md:pt-24 overflow-hidden relative">
-               <div className="w-full max-w-[1400px] h-full mx-auto bg-white shadow-2xl rounded-lg overflow-hidden border border-zinc-200 flex flex-col animate-fade-in">
+               <div className="w-full max-w-[1400px] h-full mx-auto bg-black shadow-2xl rounded-lg overflow-hidden border border-zinc-800 flex flex-col animate-fade-in">
                    {/* Browser Chrome */}
-                   <div className="bg-zinc-100 border-b border-zinc-200 px-4 py-2 flex items-center gap-2 shrink-0">
+                   <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-2 flex items-center gap-2 shrink-0">
                       <div className="flex gap-1.5">
-                         <div className="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-                         <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
-                         <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                         <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
+                         <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
+                         <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
                       </div>
-                      <div className="flex-1 mx-4 bg-white rounded-md border border-zinc-200 h-6 flex items-center px-3 text-[10px] text-zinc-400 font-mono truncate">
+                      <div className="flex-1 mx-4 bg-black rounded-md border border-zinc-800 h-6 flex items-center px-3 text-[10px] text-zinc-500 font-mono truncate">
                          preview://brand-align/asset-v1.html
                       </div>
                    </div>
                    <iframe 
                      srcDoc={processedHtml}
-                     className="w-full flex-1 border-0 bg-white"
+                     className="w-full flex-1 border-0 bg-black"
                      title="Preview"
                      sandbox="allow-scripts allow-same-origin"
                    />
