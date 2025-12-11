@@ -51,19 +51,52 @@ export const generateMarketingAsset = async (
   const engineeringGuidelines = isEmail ? guidelines.emailEngineering : guidelines.webEngineering;
 
   let layoutInstructions = "";
-  if (branding.contentType === 'landing_page') {
+  
+  // RAPSODO BRAND SYSTEM LOGIC
+  if (isRapsodo) {
+      layoutInstructions = `
+      **RAPSODO DESIGN SYSTEM (STRICT COMPLIANCE)**
+      You are not just making a dark page. You are building a Rapsodo Brand Asset.
+      
+      1. **Typography (Non-Negotiable):**
+         - **HEADLINES:** Must use 'font-condensed' (Bebas Neue). MUST be 'uppercase'. MUST include 'tracking-widest'.
+         - **SIZE:** Headlines should be HUGE (text-6xl or text-7xl for Hero, text-4xl for section headers).
+         - **BODY:** Clean sans-serif ('font-sans'), readable text-gray-300.
+
+      2. **Color Palette (Official Hexes):**
+         - **Backgrounds:** PURE BLACK (#000000) or OFF-BLACK (#0f0f0f). Do not use blue-tinted grays.
+         - **Accents:** Rapsodo Red (#C8102E). Use this for buttons, borders, and horizontal rule lines.
+         - **Text:** White (#FFFFFF) for headers. Light Gray (#D4D4D4) for body. NEVER use black text on these backgrounds.
+
+      3. **Visual Language (Aggressive & Technical):**
+         - **Borders:** Use thin, sharp borders (border-neutral-800).
+         - **Corners:** Use 'rounded-sm' or 'rounded-none'. Avoid soft 'rounded-xl' or 'rounded-2xl'. This is sports tech, not a lifestyle blog.
+         - **Separators:** Use a red accent line (w-24 h-1 bg-[#C8102E]) under every main section headline.
+
+      4. **Layout Structure (Editorial/Instructional):**
+         - **Hero Section:** Full height, immersive. Text bottom-left or centered.
+         - **Steps:** Alternating full-width sections. 
+            - Odd Steps: bg-black.
+            - Even Steps: bg-[#111111].
+         - **Images:** "Cinema Mode". Full width container, image centered within it. Add a subtle 'border border-neutral-800' around images.
+
+      5. **Footer / Support (Crucial):**
+         - Background: #000000.
+         - Grid: 4 Columns (Email Support, Call Us, Resources, Socials).
+         - Text: White headers, Gray links.
+         - **NO BLACK TEXT IN FOOTER.**
+      `;
+  } else if (branding.contentType === 'landing_page') {
+    // GENERIC LANDING PAGE LOGIC
     layoutInstructions = `
-    **STRICT LAYOUT RULE: SINGLE PAGE SCROLLING APPLICATION**
-    - This must be a "One Page" landing page experience.
-    - **CRITICAL: COMPREHENSIVE CONTENT PRESERVATION.** You MUST include ALL instructional text, technical steps, and details provided in the input. 
-    - Do NOT summarize or remove technical instructions. If the user provides a 20-step setup guide, the landing page MUST contain all 20 steps.
-    - Length is NOT a constraint. A very long, scrolling page is expected and acceptable to ensure the user has all necessary information.
-    - All content must be contained within this single HTML response.
-    - DO NOT create navigation links to external pages or other routes (e.g. NO <a href="/about">).
-    - If a navigation bar is present, links MUST be anchor links (e.g. href="#setup") pointing to IDs within this page.
-    - Organize the content into distinct vertically stacked sections (e.g., Hero -> Benefits -> Detailed Instructions -> Troubleshooting -> CTA).
-    - Ensure smooth scrolling behavior (html { scroll-behavior: smooth; }).
-    - **VISUAL CONTAINERS:** When displaying instructions, use Card or Section based layouts.
+    **STRICT LAYOUT RULE: DARK MODE EDITORIAL FLOW**
+    - **Global Theme:** DARK MODE ONLY. Backgrounds must be #000000 or #18181b (zinc-900). Text must be White.
+    - **Structure:** Full-Width Alternating Sections.
+      - Step 1: Pure Black Background (bg-black).
+      - Step 2: Dark Zinc Background (bg-zinc-900/50).
+    - **Typography:** Headlines text-white. Body text-zinc-400.
+    - **Spacing:** 'py-24' or 'py-32' for sections.
+    - **Footer:** Background Black. Text Light Gray.
     `;
   }
 
@@ -73,64 +106,53 @@ export const generateMarketingAsset = async (
   } else if (imageStrategy === 'placeholder') {
     imageInstructions = "Use placeholder images: 'https://placehold.co/800x600/333/FFF?text=Visual'.";
   } else if (imageStrategy === 'upload') {
-    // Filter out images marked as 'do_not_use'
-    const activeAssets = uploadedImages.filter(img => img.tag !== 'do_not_use');
-
-    // Construct a semantic manifest of the uploaded assets including dimensions
-    const assetManifest = activeAssets.map((img, i) => 
-      `- TOKEN: {{UPLOADED_IMAGE_${i}}} | TYPE: ${img.tag.toUpperCase()} | SIZE: ${img.width || '?'}x${img.height || '?'} | NAME: ${img.name}`
-    ).join('\n');
-
     imageInstructions = `
-      **ASSET UTILIZATION (DRAG & DROP READY):**
-      The user has extracted specific assets from their documents. 
+      **INTELLIGENT VISUAL MAPPING (MULTIMODAL ANALYSIS):**
+      I have attached the actual images available for this project to this prompt.
       
-      **AVAILABLE ASSET TOKENS:**
-      ${assetManifest}
-
-      **INSTRUCTIONS:**
-      1. Analyze the context of each section and the SIZE of the available assets.
-      2. **Smart Sizing:** If an asset is listed as large (e.g. Width > 600px), prioritize using it in large, full-width containers or Hero sections where the image is displayed prominently (e.g. Text above, huge image below).
-      3. **Icons/Small Images:** If an asset is small, use it for icon grids or small instructional thumbnails.
-      4. If you see an extracted asset that matches the section content, use its token: {{UPLOADED_IMAGE_X}}.
-      5. **IF UNSURE OR NO MATCH:** Use a Placeholder Token: {{UPLOADED_IMAGE_PLACEHOLDER}}.
-      6. **CRITICAL - DROPPABLE ZONES:** 
-         - Use <img> tags for images whenever possible.
-         - Add the class "droppable-image" to EVERY <img> tag.
-         - For Hero sections using background images, ensure the container also has the class "droppable-image".
-      7. Do not use generic placeholders if you can find a matching token in the list above.
+      **YOUR TASK:**
+      1. **VISUAL ANALYSIS:** LOOK at each image. Identify forms, charts, logos, screenshots.
+      2. **CONTEXT MATCHING:** Place the image NEXT TO the text that describes it.
+         - If text says "Click Plans", find the image showing the "Plans" tab.
+         - If text says "Enter Credit Card", find the image showing the form.
+      
+      **TOKENS & RULES:**
+      - Use token: {{UPLOADED_IMAGE_X}} (where X is the index provided below).
+      - **Image Styling:** <img src="{{UPLOADED_IMAGE_X}}" class="droppable-image w-full max-w-5xl mx-auto shadow-2xl border border-neutral-800" />
+      
+      **CRITICAL - MISSING IMAGES:**
+      - If a step (e.g. Step 6) has NO matching image in the assets:
+      - **DO NOT** use a placeholder.
+      - **DO NOT** invent an image.
+      - **USE TOKEN:** {{REMOVE_IMAGE}} inside the src.
+      - Example: <img src="{{REMOVE_IMAGE}}" />.
     `;
   } else if (imageStrategy === 'ai_generated') {
     imageInstructions = `
-      You are designing a high-fidelity layout.
-      For every image spot in the HTML, use a specific token: {{IMAGE_0}}, {{IMAGE_1}}, etc.
-      Also, in the JSON response, provide an array 'imagePrompts' where index 0 corresponds to {{IMAGE_0}}.
-      The prompts should be detailed, photographic descriptions suitable for a generative AI model (e.g. "A high intensity close up of a baseball pitcher releasing the ball, cinematic lighting, dark background, red rim light").
+      Use specific tokens: {{IMAGE_0}}, {{IMAGE_1}}, etc.
+      Provide 'imagePrompts' array in JSON.
+      Prompts should be photographic, high-contrast, moody, suitable for sports tech.
     `;
   }
 
   let brandInstructions = "";
   if (isRapsodo) {
     brandInstructions = `
-    **RAPSODO SPECIFIC GUIDELINES (STRICT):**
-    ${guidelines.rapsodoGuidelines}
-
-    **Rapsodo Web Notes:**
-    - Use 'bg-neutral-900' or 'bg-black' for hero sections.
-    - Use 'text-white' for text on dark backgrounds.
-    - Button Color: #C8102E.
-    - Font: Condensed (Bebas/Futura).
+    **RAPSODO COPYWRITING GUIDELINES:**
+    - **Tone:** "Measure to Master". Confident, Instructional, Precision-focused.
+    - **Keywords:** Grind, Data, Metrics, Pro-Level, Unlock.
+    - **Headlines:** Short, Punchy, Imperative. (e.g., "DIAL IT IN", "OWN YOUR NUMBERS").
+    - **Formatting:** Use **Bold** for key metrics or instructions.
     `;
   } else {
     brandInstructions = `
-    **Generic Branding Guidelines:**
-    - Primary: ${branding.primaryColor}
-    - Secondary: ${branding.secondaryColor}
+    **Branding Guidelines (DARK MODE):**
+    - **THEME:** ALWAYS DARK MODE.
     - Tone: ${branding.toneOfVoice}
     `;
   }
 
-  const prompt = `
+  const promptText = `
     You are a specialized AI User Interface Engineer and Marketing Copywriter (2025 Standards).
     
     **TASK:** 
@@ -144,103 +166,117 @@ export const generateMarketingAsset = async (
     ${brandInstructions}
 
     **Copywriting Directive:**
-    - Rewrite content to match brand voice.
-    - ${isRapsodo ? 'Use specific Rapsodo phrases. Outcome first.' : 'Match requested tone.'}
-    - Structure with Headlines, Subheads, and CTAs.
-    ${branding.contentType === 'landing_page' ? '- **MANDATORY:** For Landing Pages, do NOT condense instructional text. Present it fully and clearly (e.g. using distinct sections, numbered lists, or cards) so the user can successfully complete the task.' : ''}
+    1. Rewrite the input content to match the brand tone.
+    2. Structure it for high-conversion.
+    3. **Content Preservation:** Include ALL instructional steps from the input. Do not summarize technical steps.
 
     ---------------------------------------------------
-    **PART II: VISUAL STRATEGY**
+    **PART II: ENGINEERING SPECIFICATIONS**
+    ${engineeringGuidelines}
+    
+    **Layout & Visuals:**
+    ${layoutInstructions}
     ${imageInstructions}
 
-    ---------------------------------------------------
-    **PART III: ENGINEERING SPECIFICATIONS**
-    ${engineeringGuidelines}
-
+    **Agent Logic:**
     ${guidelines.agentLogic}
 
-    **Specific Logic:**
-    - Content Type: ${branding.contentType}
-    ${!isEmail ? '- Use Tailwind CSS.' : '- DO NOT use Tailwind. Use inline CSS and Tables.'}
-    ${layoutInstructions}
-
     ---------------------------------------------------
-    **OUTPUT FORMAT:**
-    Return JSON with:
-    1. 'rewrittenCopy': Plain text copy.
-    2. 'htmlLayout': Full HTML string.
-    3. 'explanation': Rationale.
-    4. 'imagePrompts': Array of strings (only if AI Generation is requested).
+    **PART III: OUTPUT SCHEMA (JSON ONLY)**
+    Return a valid JSON object with:
+    - rewrittenCopy: The optimized marketing text (markdown format).
+    - htmlLayout: The complete, single-file HTML code (including Tailwind CDN or inline styles).
+    - explanation: Brief design rationale.
+    - imagePrompts: Array of strings (optional).
   `;
 
-  try {
-    onStatusUpdate("Generating Layout & Copy...");
-    const response = await ai.models.generateContent({
-      model: modelId,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            rewrittenCopy: { type: Type.STRING },
-            htmlLayout: { type: Type.STRING },
-            explanation: { type: Type.STRING },
-            imagePrompts: { 
-              type: Type.ARRAY, 
-              items: { type: Type.STRING } 
+  onStatusUpdate("Analyzing visual context & brand guidelines...");
+
+  const parts: any[] = [{ text: promptText }];
+
+  if (branding.imageStyle === 'upload' && uploadedImages.length > 0) {
+    uploadedImages.forEach((img, index) => {
+      // Skip images marked as do_not_use
+      if (img.tag === 'do_not_use') return;
+
+      const matches = img.data.match(/^data:(.+);base64,(.+)$/);
+      if (matches) {
+          parts.push({
+            inlineData: {
+              mimeType: matches[1],
+              data: matches[2]
             }
-          },
-          required: ["rewrittenCopy", "htmlLayout", "explanation"]
-        }
+          });
+          parts.push({
+              text: `[IMAGE_TOKEN_ID: {{UPLOADED_IMAGE_${index}}} - Size: ${img.width}x${img.height}]` 
+          });
       }
     });
+  }
 
-    const jsonText = response.text;
-    if (!jsonText) throw new Error("No content generated.");
-    
-    const result = JSON.parse(jsonText) as GeneratedAsset;
-    let finalHtml = result.htmlLayout;
-
-    // POST-PROCESSING: IMAGE INJECTION
-
-    // 1. Handle Uploads
-    if (imageStrategy === 'upload' && uploadedImages.length > 0) {
-      onStatusUpdate("Injecting Uploaded Assets...");
-      
-      // Filter out do_not_use images again for the replacement logic (so indexes align with the manifest provided to AI)
-      const activeAssets = uploadedImages.filter(img => img.tag !== 'do_not_use');
-
-      // Replace specific tokens first
-      activeAssets.forEach((img, index) => {
-        finalHtml = finalHtml.replace(new RegExp(`{{UPLOADED_IMAGE_${index}}}`, 'g'), img.data);
+  try {
+      const response = await ai.models.generateContent({
+        model: modelId,
+        contents: { parts },
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    rewrittenCopy: { type: Type.STRING },
+                    htmlLayout: { type: Type.STRING },
+                    explanation: { type: Type.STRING },
+                    imagePrompts: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING }
+                    }
+                },
+                required: ["rewrittenCopy", "htmlLayout", "explanation"]
+            }
+        }
       });
-      
-      // Cleanup unused tokens or placeholders with a generic placeholder that user can drag onto
-      finalHtml = finalHtml.replace(/{{UPLOADED_IMAGE_PLACEHOLDER}}/g, 'https://placehold.co/800x600/333/FFF?text=Drag+Image+Here');
-      finalHtml = finalHtml.replace(/{{UPLOADED_IMAGE_\d+}}/g, 'https://placehold.co/800x600/333/FFF?text=Drag+Image+Here');
-    }
 
-    // 2. Handle AI Generation
-    if (imageStrategy === 'ai_generated' && result.imagePrompts && result.imagePrompts.length > 0) {
-      onStatusUpdate(`Generating ${result.imagePrompts.length} AI Assets (Nano Banana Pro)...`);
-      
-      // Generate images in parallel
-      const imagePromises = result.imagePrompts.map((p) => generateImage(p));
-      const generatedImages = await Promise.all(imagePromises);
+      const jsonText = response.text;
+      if (!jsonText) throw new Error("No response from AI");
 
-      generatedImages.forEach((base64Img, index) => {
-        finalHtml = finalHtml.replace(new RegExp(`{{IMAGE_${index}}}`, 'g'), base64Img);
-      });
-      
-      // Fallback cleanup
-      finalHtml = finalHtml.replace(/{{IMAGE_\d+}}/g, 'https://placehold.co/800x600/333/FFF?text=Gen+Failed');
-    }
+      let parsed: GeneratedAsset;
+      parsed = JSON.parse(jsonText);
 
-    return { ...result, htmlLayout: finalHtml };
+      // Post-Processing: Replace Image Tokens
+      if (branding.imageStyle === 'upload') {
+         uploadedImages.forEach((img, index) => {
+             const token = `{{UPLOADED_IMAGE_${index}}}`;
+             parsed.htmlLayout = parsed.htmlLayout.split(token).join(img.data);
+         });
+         
+         // CLEANUP: Remove images that were designated to be removed
+         // This regex removes the container if it only contains the image, or just the image tag
+         parsed.htmlLayout = parsed.htmlLayout.replace(/<div[^>]*>\s*<img[^>]*src=["']{{REMOVE_IMAGE}}["'][^>]*>\s*<\/div>/g, '');
+         parsed.htmlLayout = parsed.htmlLayout.replace(/<img[^>]*src=["']{{REMOVE_IMAGE}}["'][^>]*>/g, '');
+         
+         // Fallback cleanup
+         parsed.htmlLayout = parsed.htmlLayout.replace(/{{UPLOADED_IMAGE_\d+}}/g, '');
+      }
 
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    throw new Error("Failed to generate asset. Please try again.");
+      // AI Image Generation Pipeline
+      if (branding.imageStyle === 'ai_generated' && parsed.imagePrompts && parsed.imagePrompts.length > 0) {
+         onStatusUpdate(`Generating ${parsed.imagePrompts.length} custom AI images...`);
+         
+         const imagePromises = parsed.imagePrompts.map(async (prompt, idx) => {
+            const imageUrl = await generateImage(prompt);
+            return { token: `{{IMAGE_${idx}}}`, url: imageUrl };
+         });
+
+         const generatedImages = await Promise.all(imagePromises);
+
+         generatedImages.forEach(img => {
+             parsed.htmlLayout = parsed.htmlLayout.split(img.token).join(img.url);
+         });
+      }
+
+      return parsed;
+  } catch (err) {
+      console.error("Gemini API Error:", err);
+      throw err;
   }
 };
