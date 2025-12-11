@@ -60,6 +60,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
         const pdf = await loadingTask.promise;
         let fullText = '';
         const extractedImages: UploadedAsset[] = [];
+        const imageHashes = new Set<string>(); // Deduplication
         
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
@@ -70,69 +71,62 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
           const pageText = textContent.items.map((item: any) => item.str).join(' ');
           fullText += `*** CONTENT FROM PDF PAGE ${i} ***\n${pageText}\n\n`;
 
-          // 2. Deep Image Extraction (Native Images)
+          // 2. Deep Image Extraction (Native Interception Method)
           try {
-            const ops = await page.getOperatorList();
-            const fnArray = ops.fnArray;
-            const argsArray = ops.argsArray;
+            const viewport = page.getViewport({ scale: 1.0 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
             
-            // @ts-ignore
-            const OPS = pdfjsLib.OPS;
+            if (ctx) {
+                const originalDrawImage = ctx.drawImage;
+                
+                // Intercept drawImage calls
+                // @ts-ignore
+                ctx.drawImage = (image: CanvasImageSource, ...args: any[]) => {
+                    try {
+                        const width = 'width' in image ? (image.width as number) : 0;
+                        const height = 'height' in image ? (image.height as number) : 0;
 
-            let imageCountOnPage = 0;
+                        // Filter noise
+                        if (width > 64 && height > 64) {
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = width;
+                            tempCanvas.height = height;
+                            const tempCtx = tempCanvas.getContext('2d');
+                            if (tempCtx) {
+                                tempCtx.drawImage(image, 0, 0);
+                                const base64 = tempCanvas.toDataURL('image/png');
+                                const key = `${width}x${height}-${base64.length}`;
 
-            for (let j = 0; j < fnArray.length; j++) {
-              if (fnArray[j] === OPS.paintImageXObject) {
-                const imgName = argsArray[j][0];
-                try {
-                  const imgObj = await page.objs.get(imgName);
-                  if (imgObj && imgObj.data) {
-                    const { width, height, data } = imgObj;
-                    
-                    // Filter out tiny icons/lines to reduce noise
-                    if (width < 50 || height < 50) continue;
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                      const imageData = ctx.createImageData(width, height);
-                      // Handle potentially different data formats (RGBA vs RGB)
-                      // Simplistic approach for RGBA:
-                      if (data.length === width * height * 4) {
-                         imageData.data.set(data);
-                      } else if (data.length === width * height * 3) {
-                         // RGB to RGBA
-                         for (let p = 0, d = 0; p < data.length; p += 3, d += 4) {
-                           imageData.data[d] = data[p];
-                           imageData.data[d+1] = data[p+1];
-                           imageData.data[d+2] = data[p+2];
-                           imageData.data[d+3] = 255;
-                         }
-                      } else {
-                         // Grayscale or other, skip for now to avoid noise
-                         continue;
-                      }
-                      
-                      ctx.putImageData(imageData, 0, 0);
-                      const base64 = canvas.toDataURL('image/jpeg', 0.9);
-                      
-                      extractedImages.push({
-                        id: Math.random().toString(36).substr(2, 9),
-                        data: base64,
-                        name: `Extracted Pg${i}-Img${++imageCountOnPage}`,
-                        tag: 'product'
-                      });
+                                if (!imageHashes.has(key)) {
+                                    imageHashes.add(key);
+                                    extractedImages.push({
+                                        id: Math.random().toString(36).substr(2, 9),
+                                        data: base64,
+                                        name: `Pg${i}-Img${extractedImages.length + 1}`,
+                                        tag: 'product',
+                                        width,
+                                        height
+                                    });
+                                }
+                            }
+                        }
+                    } catch (err) {
+                        // Silent fail for individual image
                     }
-                  }
-                } catch (imgErr) {
-                  // Silent fail for specific image
-                }
-              }
+                    // Continue rendering
+                    // @ts-ignore
+                    originalDrawImage.apply(ctx, [image, ...args]);
+                };
+
+                // Render page to trigger interception
+                // @ts-ignore
+                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
             }
-          } catch (opsErr) {
-            console.warn("Failed to parse operators for images:", opsErr);
+          } catch (renderErr) {
+             console.warn(`Error rendering page ${i} for image extraction`, renderErr);
           }
         }
         
@@ -143,7 +137,8 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
           handleBrandingChange('imageStyle', 'upload');
         } else {
            // Fallback: If no images extracted, grab page screenshots (legacy mode)
-           alert("No individual images found. Falling back to page screenshots.");
+           // This is useful for scanned PDFs where everything is one big image anyway
+           console.log("No individual images found. Falling back to page screenshots.");
            const fallbackImages: UploadedAsset[] = [];
            for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
               const page = await pdf.getPage(i);
@@ -158,8 +153,10 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                 fallbackImages.push({
                   id: Math.random().toString(36).substr(2, 9),
                   data: canvas.toDataURL('image/jpeg', 0.8),
-                  name: `PDF Page ${i} (Screenshot)`,
-                  tag: 'other'
+                  name: `Page ${i} (Full)`,
+                  tag: 'other',
+                  width: viewport.width,
+                  height: viewport.height
                 });
               }
            }
@@ -191,14 +188,21 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
         const reader = new FileReader();
         reader.onloadend = () => {
           if (reader.result) {
-            const newAsset: UploadedAsset = {
-              id: Math.random().toString(36).substr(2, 9),
-              data: reader.result as string,
-              name: file.name,
-              tag: 'product' // Default tag
+            // Create a temp image to get dimensions
+            const img = new Image();
+            img.onload = () => {
+                const newAsset: UploadedAsset = {
+                  id: Math.random().toString(36).substr(2, 9),
+                  data: reader.result as string,
+                  name: file.name,
+                  tag: 'product', // Default tag
+                  width: img.width,
+                  height: img.height
+                };
+                setUploadedImages(prev => [...prev, newAsset]);
+                handleBrandingChange('imageStyle', 'upload');
             };
-            setUploadedImages(prev => [...prev, newAsset]);
-            handleBrandingChange('imageStyle', 'upload');
+            img.src = reader.result as string;
           }
         };
         reader.readAsDataURL(file);
@@ -245,6 +249,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
     { val: 'chart', label: 'Data / Chart' },
     { val: 'icon', label: 'Iconography' },
     { val: 'other', label: 'Other' },
+    { val: 'do_not_use', label: 'DO NOT USE' },
   ];
 
   return (
@@ -384,36 +389,73 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
 
               {branding.imageStyle === 'upload' && (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-1 gap-2">
-                    {uploadedImages.map((img, idx) => (
-                      <div key={img.id} className="flex gap-2 p-2 bg-zinc-900 border border-zinc-800 rounded-lg group hover:border-zinc-700 transition-colors">
-                        <div className="relative w-16 h-16 rounded-md overflow-hidden shrink-0 bg-black border border-zinc-800">
-                          <img src={img.data} className="w-full h-full object-contain" alt="upload" />
-                          <button 
-                            onClick={() => removeImage(idx)}
-                            className="absolute top-0 right-0 p-1 bg-black/70 hover:bg-red-900 text-white opacity-0 group-hover:opacity-100 transition-opacity rounded-bl-md"
-                          >
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                          </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    {uploadedImages.map((img, idx) => {
+                       // Smart layout: images wider than 400px take full width
+                       const isWide = (img.width || 0) > 400;
+                       const isExcluded = img.tag === 'do_not_use';
+                       
+                       return (
+                        <div 
+                          key={img.id} 
+                          className={`
+                            relative flex flex-col bg-zinc-900 border rounded-lg overflow-hidden group transition-all
+                            ${isWide ? 'col-span-2' : 'col-span-1'} 
+                            ${isExcluded ? 'border-zinc-800 opacity-50 grayscale' : 'border-zinc-800 hover:border-zinc-600'}
+                          `}
+                        >
+                          {/* Image Preview */}
+                          <div className={`
+                            relative bg-black w-full overflow-hidden shrink-0
+                            ${isWide ? 'h-32' : 'h-24'}
+                          `}>
+                             <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#333 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+                             <img src={img.data} className="w-full h-full object-contain relative z-10" alt="upload" />
+                             
+                             {/* Size badge */}
+                             {(img.width && img.height) && (
+                                <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/60 backdrop-blur rounded text-[8px] font-mono text-zinc-400 z-20">
+                                  {img.width}x{img.height}
+                                </div>
+                             )}
+
+                             {/* Remove Button */}
+                             <button 
+                                onClick={() => removeImage(idx)}
+                                className="absolute top-1 right-1 p-1 bg-black/50 hover:bg-red-900 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                              >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                              </button>
+                          </div>
+
+                          {/* Controls */}
+                          <div className="p-2 border-t border-zinc-800 bg-zinc-900">
+                             <div className="flex justify-between items-center mb-1.5">
+                               <p className="text-[10px] text-zinc-400 truncate font-mono max-w-[80px]">{img.name}</p>
+                             </div>
+                             <select
+                                value={img.tag}
+                                onChange={(e) => updateImageTag(idx, e.target.value as AssetTag)}
+                                className={`
+                                  w-full text-[9px] uppercase font-bold py-1 px-1.5 rounded border outline-none cursor-pointer
+                                  ${isExcluded 
+                                    ? 'bg-red-900/20 text-red-500 border-red-900/50' 
+                                    : 'bg-zinc-950 text-white border-zinc-700 focus:border-[#C8102E]'
+                                  }
+                                `}
+                              >
+                                {assetTags.map(tag => (
+                                  <option key={tag.val} value={tag.val}>{tag.label}</option>
+                                ))}
+                              </select>
+                          </div>
                         </div>
-                        <div className="flex-1 flex flex-col justify-center gap-1.5 min-w-0">
-                          <p className="text-[10px] text-zinc-400 truncate font-mono">{img.name}</p>
-                          <select
-                            value={img.tag}
-                            onChange={(e) => updateImageTag(idx, e.target.value as AssetTag)}
-                            className="w-full bg-zinc-950 text-white text-[10px] uppercase font-bold py-1 px-2 rounded border border-zinc-800 focus:border-[#C8102E] outline-none"
-                          >
-                            {assetTags.map(tag => (
-                              <option key={tag.val} value={tag.val}>{tag.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     
                     <button 
                       onClick={() => imageInputRef.current?.click()}
-                      className="w-full py-3 rounded-md bg-zinc-900 border border-zinc-800 border-dashed hover:border-zinc-600 flex items-center justify-center gap-2 text-zinc-600 transition-colors group"
+                      className="col-span-2 py-3 rounded-md bg-zinc-900 border border-zinc-800 border-dashed hover:border-zinc-600 flex items-center justify-center gap-2 text-zinc-600 transition-colors group"
                     >
                       <svg className="w-4 h-4 group-hover:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                       <span className="text-[10px] uppercase font-bold group-hover:text-zinc-400">Add More Images</span>
@@ -427,7 +469,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
                     accept="image/*"
                     multiple
                   />
-                  <p className="text-[10px] text-zinc-600 text-center">AI will prioritize these assets. Drag & Drop in Preview to swap.</p>
+                  <p className="text-[10px] text-zinc-600 text-center">AI uses these to build your asset. Set to "DO NOT USE" to ignore.</p>
                 </div>
               )}
              </section>

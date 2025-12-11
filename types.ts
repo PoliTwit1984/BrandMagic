@@ -8,13 +8,15 @@ export interface BrandingConfig {
   imageStyle: 'none' | 'placeholder' | 'upload' | 'ai_generated';
 }
 
-export type AssetTag = 'hero' | 'product' | 'lifestyle' | 'logo' | 'chart' | 'icon' | 'other';
+export type AssetTag = 'hero' | 'product' | 'lifestyle' | 'logo' | 'chart' | 'icon' | 'other' | 'do_not_use';
 
 export interface UploadedAsset {
   id: string;
   data: string; // Base64 string
   name: string;
   tag: AssetTag;
+  width?: number;
+  height?: number;
 }
 
 export interface GuidelinesConfig {

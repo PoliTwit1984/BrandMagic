@@ -73,9 +73,12 @@ export const generateMarketingAsset = async (
   } else if (imageStrategy === 'placeholder') {
     imageInstructions = "Use placeholder images: 'https://placehold.co/800x600/333/FFF?text=Visual'.";
   } else if (imageStrategy === 'upload') {
-    // Construct a semantic manifest of the uploaded assets
-    const assetManifest = uploadedImages.map((img, i) => 
-      `- TOKEN: {{UPLOADED_IMAGE_${i}}} | TYPE: ${img.tag.toUpperCase()} | NAME: ${img.name}`
+    // Filter out images marked as 'do_not_use'
+    const activeAssets = uploadedImages.filter(img => img.tag !== 'do_not_use');
+
+    // Construct a semantic manifest of the uploaded assets including dimensions
+    const assetManifest = activeAssets.map((img, i) => 
+      `- TOKEN: {{UPLOADED_IMAGE_${i}}} | TYPE: ${img.tag.toUpperCase()} | SIZE: ${img.width || '?'}x${img.height || '?'} | NAME: ${img.name}`
     ).join('\n');
 
     imageInstructions = `
@@ -86,15 +89,16 @@ export const generateMarketingAsset = async (
       ${assetManifest}
 
       **INSTRUCTIONS:**
-      1. Analyze the context of each section.
-      2. If you see an extracted asset that perfectly matches the section (e.g., a "Product" extracted image for the "Product" section), use its token: {{UPLOADED_IMAGE_X}}.
-      3. **IF UNSURE OR NO MATCH:** Use a Placeholder Token: {{UPLOADED_IMAGE_PLACEHOLDER}}.
-      4. **CRITICAL - DROPPABLE ZONES:** 
-         - Use <img> tags for images whenever possible (instead of div background-images). 
+      1. Analyze the context of each section and the SIZE of the available assets.
+      2. **Smart Sizing:** If an asset is listed as large (e.g. Width > 600px), prioritize using it in large, full-width containers or Hero sections where the image is displayed prominently (e.g. Text above, huge image below).
+      3. **Icons/Small Images:** If an asset is small, use it for icon grids or small instructional thumbnails.
+      4. If you see an extracted asset that matches the section content, use its token: {{UPLOADED_IMAGE_X}}.
+      5. **IF UNSURE OR NO MATCH:** Use a Placeholder Token: {{UPLOADED_IMAGE_PLACEHOLDER}}.
+      6. **CRITICAL - DROPPABLE ZONES:** 
+         - Use <img> tags for images whenever possible.
          - Add the class "droppable-image" to EVERY <img> tag.
-         - For Hero sections using background images, ensure the container also has the class "droppable-image" so the user can drag new backgrounds onto it.
-      5. Do not use generic placeholders if you can find a matching token in the list above.
-      6. Try to distribute the images logically.
+         - For Hero sections using background images, ensure the container also has the class "droppable-image".
+      7. Do not use generic placeholders if you can find a matching token in the list above.
     `;
   } else if (imageStrategy === 'ai_generated') {
     imageInstructions = `
@@ -204,8 +208,11 @@ export const generateMarketingAsset = async (
     if (imageStrategy === 'upload' && uploadedImages.length > 0) {
       onStatusUpdate("Injecting Uploaded Assets...");
       
+      // Filter out do_not_use images again for the replacement logic (so indexes align with the manifest provided to AI)
+      const activeAssets = uploadedImages.filter(img => img.tag !== 'do_not_use');
+
       // Replace specific tokens first
-      uploadedImages.forEach((img, index) => {
+      activeAssets.forEach((img, index) => {
         finalHtml = finalHtml.replace(new RegExp(`{{UPLOADED_IMAGE_${index}}}`, 'g'), img.data);
       });
       
