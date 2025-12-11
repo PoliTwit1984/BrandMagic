@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BrandAlign Polish</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#f0f9ff',
+                100: '#e0f2fe',
+                500: '#0ea5e9',
+                600: '#0284c7',
+                900: '#0c4a6e',
+              },
+              rapsodo: {
+                red: '#C8102E', // Official Rapsodo Red
+                darkRed: '#A6192E',
+                black: '#000000',
+                darkGray: '#4B4F54',
+                gray: '#7C7E7F',
+                lightGray: '#F5F5F5',
+                baseballBlue: '#002D72', // Electric Blue approx
+                softballYellow: '#DFFF00', // Neon Yellow approx
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              condensed: ['"Bebas Neue"', 'sans-serif'], // For Rapsodo Headlines
+            },
+          },
+        },
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8fafc;
+      }
+      /* Custom scrollbar for generated content preview */
+      .preview-scroll::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      .preview-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+      }
+      .preview-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1; 
+        border-radius: 4px;
+      }
+      .preview-scroll::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8; 
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.32.0",
+    "react/": "https://esm.sh/react@^19.2.1/",
+    "react": "https://esm.sh/react@^19.2.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.1/",
+    "pdfjs-dist": "https://esm.sh/pdfjs-dist@4.0.379"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
