@@ -61,48 +61,112 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data, isLoading, upl
     );
   }
 
-  // Inject Tailwind + DnD Script
-  // This script enables dropping extracted images onto the generated layout
-  const processedHtml = data.htmlLayout.includes('<html') 
-    ? data.htmlLayout.replace('</body>', `
+  // ROBUST HTML WRAPPING & SCRIPT INJECTION
+  // We explicitly construct the full HTML document to ensure the script is always present and valid.
+  const getProcessedHtml = (rawHtml: string) => {
+    // Extract body content if it exists to avoid double body tags
+    let content = rawHtml;
+    const bodyMatch = rawHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+    if (bodyMatch) {
+      content = bodyMatch[1];
+    } else {
+      // If no body tag, check for html tag and strip it, or just use raw if it's a fragment
+      content = rawHtml.replace(/<\/?html[^>]*>/g, '').replace(/<\/?head[^>]*>[\s\S]*?<\/head>/g, '');
+    }
+
+    // Default styles for background images to make them behave well with replacements
+    const dragDropScript = `
       <script>
+        // Visual feedback during drag
         document.addEventListener('dragover', function(e) {
           e.preventDefault();
           e.stopPropagation();
-        });
-        document.addEventListener('drop', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          // Get the image source dragged from the parent window
-          const draggedSrc = e.dataTransfer.getData('text/plain');
+          e.dataTransfer.dropEffect = 'copy';
           
-          if (draggedSrc && (e.target.tagName === 'IMG' || e.target.classList.contains('droppable-image'))) {
-             e.target.src = draggedSrc;
-             e.target.style.border = '2px solid #C8102E'; // Visual feedback
-             setTimeout(() => { e.target.style.border = ''; }, 500);
+          // Highlight target
+          const target = e.target;
+          if (target.tagName === 'IMG' || target.style.backgroundImage) {
+             target.style.outline = '3px dashed #C8102E';
+             target.style.outlineOffset = '-3px';
           }
         });
-      </script>
-      </body>
-    `) 
-    : `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-transparent">${data.htmlLayout}
-      <script>
-        document.addEventListener('dragover', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
+
+        document.addEventListener('dragleave', function(e) {
+           e.preventDefault();
+           e.stopPropagation();
+           if (e.target.style) {
+             e.target.style.outline = '';
+             e.target.style.outlineOffset = '';
+           }
         });
+
         document.addEventListener('drop', function(e) {
           e.preventDefault();
           e.stopPropagation();
+          
+          // Clear highlight
+          if (e.target.style) {
+             e.target.style.outline = '';
+             e.target.style.outlineOffset = '';
+          }
+
           const draggedSrc = e.dataTransfer.getData('text/plain');
-          if (draggedSrc && e.target.tagName === 'IMG') {
-             e.target.src = draggedSrc;
-             e.target.style.border = '2px solid #C8102E';
-             setTimeout(() => { e.target.style.border = ''; }, 500);
+          if (!draggedSrc) return;
+
+          const target = e.target;
+
+          // Case 1: Image Tag
+          if (target.tagName === 'IMG') {
+             target.src = draggedSrc;
+             // Reset dimensions to auto to prevent stretching if aspect ratio differs, 
+             // but keep width constraints if they exist in class
+             // target.removeAttribute('width');
+             // target.removeAttribute('height');
+          } 
+          // Case 2: Element with Background Image
+          else if (window.getComputedStyle(target).backgroundImage !== 'none') {
+             target.style.backgroundImage = 'url(' + draggedSrc + ')';
+             target.style.backgroundSize = 'cover';
+             target.style.backgroundPosition = 'center';
+          }
+          // Case 3: Droppable container (fallback)
+          else if (target.classList.contains('droppable-image')) {
+             // If it's a div placeholder without an image yet
+             const img = document.createElement('img');
+             img.src = draggedSrc;
+             img.style.width = '100%';
+             img.style.height = '100%';
+             img.style.objectFit = 'cover';
+             target.innerHTML = '';
+             target.appendChild(img);
           }
         });
       </script>
-    </body></html>`;
+    `;
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            html { scroll-behavior: smooth; }
+            body { background-color: transparent; }
+            /* Force min-height on common containers to ensure drop targets exist */
+            .droppable-image { min-height: 100px; display: block; background-color: #f3f4f6; }
+          </style>
+        </head>
+        <body>
+          ${content}
+          ${dragDropScript}
+        </body>
+      </html>
+    `;
+  };
+
+  const processedHtml = getProcessedHtml(data.htmlLayout);
 
   return (
     <div className="flex-1 flex flex-col h-full bg-zinc-50 overflow-hidden relative min-h-0" style={bgPattern}>
@@ -185,7 +249,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({ data, isLoading, upl
                         className="group relative w-20 h-20 rounded bg-black border border-zinc-800 hover:border-[#C8102E] shrink-0 cursor-grab active:cursor-grabbing overflow-hidden transition-all"
                         title={img.name}
                       >
-                         <img src={img.data} className="w-full h-full object-contain opacity-80 group-hover:opacity-100" />
+                         <img src={img.data} className="w-full h-full object-contain opacity-80 group-hover:opacity-100" alt={img.name} />
                          <div className="absolute inset-0 bg-black/50 group-hover:bg-transparent transition-colors"></div>
                       </div>
                    ))}

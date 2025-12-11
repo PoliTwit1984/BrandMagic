@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { ConfigPanel } from './components/ConfigPanel';
 import { PreviewPanel } from './components/PreviewPanel';
+import { ImageExtractor } from './components/ImageExtractor';
 import { BrandingConfig, GeneratedAsset, GuidelinesConfig, UploadedAsset } from './types';
 import { generateMarketingAsset } from './services/gemini';
 import { RAPSODO_BRAND_GUIDELINES } from './services/brands';
 import { WEB_UI_DIRECTIVES, EMAIL_ENGINEERING_DIRECTIVES, AI_AGENT_LOGIC } from './services/guidelines';
 
 const App: React.FC = () => {
+  const [currentView, setCurrentView] = useState<'generator' | 'extractor'>('generator');
+  
   const [rawContent, setRawContent] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<UploadedAsset[]>([]);
   
@@ -69,6 +72,11 @@ const App: React.FC = () => {
     }
   };
 
+  // If in Extractor mode, render the ImageExtractor component full screen
+  if (currentView === 'extractor') {
+    return <ImageExtractor onBack={() => setCurrentView('generator')} />;
+  }
+
   return (
     <div className="flex h-screen w-screen bg-zinc-50 overflow-hidden font-sans">
       <ConfigPanel 
@@ -82,6 +90,7 @@ const App: React.FC = () => {
         isGenerating={generationState.isLoading}
         uploadedImages={uploadedImages}
         setUploadedImages={setUploadedImages}
+        onNavigateToExtractor={() => setCurrentView('extractor')}
       />
       <main className="flex-1 relative flex flex-col min-w-0 min-h-0">
          {generationState.isLoading && generationState.statusMessage && (

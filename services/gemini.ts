@@ -63,6 +63,7 @@ export const generateMarketingAsset = async (
     - If a navigation bar is present, links MUST be anchor links (e.g. href="#setup") pointing to IDs within this page.
     - Organize the content into distinct vertically stacked sections (e.g., Hero -> Benefits -> Detailed Instructions -> Troubleshooting -> CTA).
     - Ensure smooth scrolling behavior (html { scroll-behavior: smooth; }).
+    - **VISUAL CONTAINERS:** When displaying instructions, use Card or Section based layouts.
     `;
   }
 
@@ -88,7 +89,10 @@ export const generateMarketingAsset = async (
       1. Analyze the context of each section.
       2. If you see an extracted asset that perfectly matches the section (e.g., a "Product" extracted image for the "Product" section), use its token: {{UPLOADED_IMAGE_X}}.
       3. **IF UNSURE OR NO MATCH:** Use a Placeholder Token: {{UPLOADED_IMAGE_PLACEHOLDER}}.
-      4. **CRITICAL:** Add the class "droppable-image" to EVERY <img> tag in your HTML. This enables the user to drag and drop their extracted assets onto the layout to fix any mistakes.
+      4. **CRITICAL - DROPPABLE ZONES:** 
+         - Use <img> tags for images whenever possible (instead of div background-images). 
+         - Add the class "droppable-image" to EVERY <img> tag.
+         - For Hero sections using background images, ensure the container also has the class "droppable-image" so the user can drag new backgrounds onto it.
       5. Do not use generic placeholders if you can find a matching token in the list above.
       6. Try to distribute the images logically.
     `;

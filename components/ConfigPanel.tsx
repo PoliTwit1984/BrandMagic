@@ -16,7 +16,8 @@ interface ConfigPanelProps {
   onGenerate: () => void;
   isGenerating: boolean;
   uploadedImages: UploadedAsset[];
-  setUploadedImages: (images: UploadedAsset[]) => void;
+  setUploadedImages: React.Dispatch<React.SetStateAction<UploadedAsset[]>>;
+  onNavigateToExtractor: () => void;
 }
 
 export const ConfigPanel: React.FC<ConfigPanelProps> = ({
@@ -29,7 +30,8 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   onGenerate,
   isGenerating,
   uploadedImages,
-  setUploadedImages
+  setUploadedImages,
+  onNavigateToExtractor
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -141,8 +143,6 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
           handleBrandingChange('imageStyle', 'upload');
         } else {
            // Fallback: If no images extracted, grab page screenshots (legacy mode)
-           // Re-loop for screenshots only if deep extraction failed completely
-           // (This ensures we at least have SOMETHING)
            alert("No individual images found. Falling back to page screenshots.");
            const fallbackImages: UploadedAsset[] = [];
            for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
@@ -153,6 +153,7 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
               canvas.height = viewport.height;
               canvas.width = viewport.width;
               if (context) {
+                // @ts-ignore - fix for render type mismatch requiring canvas property
                 await page.render({ canvasContext: context, viewport: viewport }).promise;
                 fallbackImages.push({
                   id: Math.random().toString(36).substr(2, 9),
@@ -255,9 +256,17 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
           <h1 className="text-2xl font-condensed tracking-wide text-white">
             BRANDALIGN <span className="text-[#C8102E]">POLISH</span>
           </h1>
-          <p className="text-xs text-zinc-500 font-mono tracking-widest uppercase mt-1">
-            Marketing Asset Engine v2.0
-          </p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-xs text-zinc-500 font-mono tracking-widest uppercase">
+              Marketing Asset Engine
+            </p>
+            <button 
+              onClick={onNavigateToExtractor}
+              className="text-[10px] font-bold text-[#C8102E] hover:text-white uppercase tracking-wider underline decoration-zinc-800 hover:decoration-white transition-all"
+            >
+              Get Images
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button 
